@@ -1,5 +1,6 @@
 @charset "utf-8";
 
+
 * {
     margin: 0;
     padding: 0;
@@ -283,4 +284,63 @@ body {
     font-size: 11px;
     color: #666;
     line-height: 1.4;
+}
+
+/* Google Maps用スタイル */
+.map-container {
+    margin-top: 24px;
+    animation: fadeIn 0.5s;
+}
+
+#map {
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.route-details {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.route-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.route-info:last-child {
+    margin-bottom: 0;
+}
+
+.route-label {
+    font-size: 14px;
+    color: #666;
+}
+
+.route-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+.start-navigation-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 12px;
+    transition: all 0.3s;
+}
+
+.start-navigation-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
 }
