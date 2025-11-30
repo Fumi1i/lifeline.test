@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>C</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+     <div class="container">
+        <div class="header">
+            <div class="logo">🛡️ Lifeline</div>
+            <div class="tagline" id="tagline">あなたの命を守る避難誘導サービス</div>
+        </div>
+
+        <div class="content">
+            <div class="language-selector">
+                <button class="lang-btn active" onclick="setLanguage('ja')">日本語</button>
+                <button class="lang-btn" onclick="setLanguage('en')">English</button>
+                <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+            </div>
+
+            <div class="status-card alert">
+                <div class="status-title" id="status-title">⚠️ 警戒レベル3</div>
+                <div class="status-info" id="status-info">地震発生の可能性があります。避難準備を推奨します。</div>
+            </div>
+
+            <div class="location-info">
+                <div class="location-icon">📍</div>
+                <div class="location-text">
+                    <div class="location-label" id="location-label">現在地</div>
+                    <div class="location-value" id="location-value">東京都新宿区西新宿</div>
+                </div>
+            </div>
+
+            <button class="evacuation-btn" onclick="startEvacuation()">
+                <span class="btn-icon">🚨</span>
+                <span id="btn-text">避難開始</span>
+            </button>
+
+            <div class="shelter-list" id="shelter-list">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <div id="loading-text">最適な避難所を検索中...</div>
+                </div>
+                <div id="shelters"></div>
+            </div>
+
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🤖</div>
+                    <div class="feature-text" id="feature1">AIによる最適化</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🗺️</div>
+                    <div class="feature-text" id="feature2">リアルタイムルート</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-text" id="feature3">多言語対応</div>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+  <script src="script.js"></script>
+</body>
+</html>
