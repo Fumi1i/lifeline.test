@@ -1,3 +1,9 @@
+// Google Maps関連の変数
+let map;
+let directionsService;
+let directionsRenderer;
+let currentPosition = null;
+
 // 多言語対応の翻訳データ
 const translations = {
     ja: {
@@ -9,7 +15,10 @@ const translations = {
         loadingText: '最適な避難所を検索中...',
         feature1: 'AIによる最適化',
         feature2: 'リアルタイムルート',
-        feature3: '多言語対応'
+        feature3: '多言語対応',
+        distance: '距離',
+        duration: '所要時間',
+        startNavigation: 'ナビゲーション開始'
     },
     en: {
         tagline: 'Emergency Evacuation Guidance Service',
@@ -20,7 +29,10 @@ const translations = {
         loadingText: 'Finding optimal shelters...',
         feature1: 'AI Optimized',
         feature2: 'Real-time Routes',
-        feature3: 'Multi-language'
+        feature3: 'Multi-language',
+        distance: 'Distance',
+        duration: 'Duration',
+        startNavigation: 'Start Navigation'
     },
     zh: {
         tagline: '守护您生命的避难引导服务',
@@ -31,12 +43,31 @@ const translations = {
         loadingText: '正在搜索最佳避难所...',
         feature1: 'AI优化',
         feature2: '实时路线',
-        feature3: '多语言支持'
+        feature3: '多语言支持',
+        distance: '距离',
+        duration: '所需时间',
+        startNavigation: '开始导航'
     }
 };
 
 // 現在の言語
 let currentLang = 'ja';
+
+/**
+ * Google Maps初期化コールバック
+ */
+function initMap() {
+    console.log('Google Maps API loaded');
+    // DirectionsServiceとRendererを初期化
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: false,
+        polylineOptions: {
+            strokeColor: '#4285F4',
+            strokeWeight: 6
+        }
+    });
+}
 
 /**
  * 言語を切り替える関数
@@ -80,20 +111,44 @@ function startEvacuation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                console.log('位置情報取得成功:', position.coords);
-                // 実際のアプリでは、ここでバックエンドAPIに位置情報を送信
-                // 例: fetchShelters(position.coords.latitude, position.coords.longitude);
+                currentPosition = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                console.log('位置情報取得成功:', currentPosition);
+                
+                // 逆ジオコーディングで住所を取得
+                getAddressFromCoords(currentPosition);
+                
+                // 避難所データを取得して表示
                 setTimeout(() => showShelters(), 2000);
             },
             (error) => {
                 console.log('位置情報取得失敗、デモデータを使用:', error);
+                // デフォルトの位置（新宿駅周辺）
+                currentPosition = { lat: 35.6896, lng: 139.7006 };
                 setTimeout(() => showShelters(), 2000);
             }
         );
     } else {
         console.log('位置情報APIが利用できません');
+        currentPosition = { lat: 35.6896, lng: 139.7006 };
         setTimeout(() => showShelters(), 2000);
     }
+}
+
+/**
+ * 座標から住所を取得
+ * @param {Object} coords - 座標 {lat, lng}
+ */
+function getAddressFromCoords(coords) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: coords }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+            document.getElementById('location-value').textContent = 
+                results[0].formatted_address;
+        }
+    });
 }
 
 /**
@@ -109,37 +164,77 @@ function showShelters() {
     // 実際のアプリでは、バックエンドAPIから取得
     const shelters = [
         { 
-            name: '新宿区立 西新宿小学校', 
-            distance: '450m', 
-            time: '6分', 
-            capacity: 35, 
+            name: '新宿区立 西新宿小学校',
+            address: '東京都新宿区西新宿4-35-4',
+            lat: 35.6869,
+            lng: 139.6917,
+            capacity: 35,
             maxCapacity: 100 
         },
         { 
-            name: '新宿スポーツセンター', 
-            distance: '820m', 
-            time: '11分', 
-            capacity: 68, 
+            name: '新宿スポーツセンター',
+            address: '東京都新宿区大久保3-5-1',
+            lat: 35.7018,
+            lng: 139.7007,
+            capacity: 68,
             maxCapacity: 100 
         },
         { 
-            name: '新宿区役所 本庁舎', 
-            distance: '1.2km', 
-            time: '16分', 
-            capacity: 52, 
+            name: '新宿区役所 本庁舎',
+            address: '東京都新宿区歌舞伎町1-4-1',
+            lat: 35.6938,
+            lng: 139.7036,
+            capacity: 52,
             maxCapacity: 100 
         }
     ];
 
-    // 各避難所のカードを作成
+    // 各避難所までのルート情報を取得して表示
     shelters.forEach((shelter, index) => {
-        const card = createShelterCard(shelter, index);
-        sheltersDiv.appendChild(card);
+        calculateAndDisplayRoute(shelter, index, sheltersDiv);
     });
 }
 
 /**
- * 避難所カードのDOM要素を作成
+ * Routes APIを使用してルートを計算し、避難所カードを作成
+ * @param {Object} shelter - 避難所データ
+ * @param {number} index - インデックス
+ * @param {HTMLElement} container - コンテナ要素
+ */
+function calculateAndDisplayRoute(shelter, index, container) {
+    if (!currentPosition) {
+        // 位置情報がない場合はデモデータで表示
+        const card = createShelterCardWithoutRoute(shelter, index);
+        container.appendChild(card);
+        return;
+    }
+
+    const request = {
+        origin: currentPosition,
+        destination: { lat: shelter.lat, lng: shelter.lng },
+        travelMode: google.maps.TravelMode.WALKING,
+        unitSystem: google.maps.UnitSystem.METRIC
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+            const route = result.routes[0].legs[0];
+            shelter.distance = route.distance.text;
+            shelter.duration = route.duration.text;
+            shelter.routeData = result;
+            
+            const card = createShelterCard(shelter, index);
+            container.appendChild(card);
+        } else {
+            console.error('ルート取得失敗:', status);
+            const card = createShelterCardWithoutRoute(shelter, index);
+            container.appendChild(card);
+        }
+    });
+}
+
+/**
+ * ルート情報ありの避難所カードを作成
  * @param {Object} shelter - 避難所データ
  * @param {number} index - インデックス
  * @returns {HTMLElement} カード要素
@@ -147,9 +242,8 @@ function showShelters() {
 function createShelterCard(shelter, index) {
     const card = document.createElement('div');
     card.className = 'shelter-card';
-    card.onclick = () => openGoogleMaps(shelter);
+    card.onclick = () => showRouteOnMap(shelter);
     
-    // 混雑度に応じたクラスを決定
     let capacityClass = '';
     if (shelter.capacity > 70) {
         capacityClass = 'high';
@@ -161,7 +255,7 @@ function createShelterCard(shelter, index) {
         <div class="shelter-name">${index + 1}. ${shelter.name}</div>
         <div class="shelter-info">
             <span>📏 ${shelter.distance}</span>
-            <span>⏱️ 徒歩${shelter.time}</span>
+            <span>⏱️ ${shelter.duration}</span>
             <span>👥 混雑度: ${shelter.capacity}%</span>
         </div>
         <div class="capacity-bar">
@@ -173,11 +267,97 @@ function createShelterCard(shelter, index) {
 }
 
 /**
- * Google Mapsで避難所へのルートを開く
+ * ルート情報なしの避難所カード作成（フォールバック）
+ * @param {Object} shelter - 避難所データ
+ * @param {number} index - インデックス
+ * @returns {HTMLElement} カード要素
+ */
+function createShelterCardWithoutRoute(shelter, index) {
+    const card = document.createElement('div');
+    card.className = 'shelter-card';
+    card.onclick = () => openGoogleMapsWeb(shelter);
+    
+    let capacityClass = '';
+    if (shelter.capacity > 70) {
+        capacityClass = 'high';
+    } else if (shelter.capacity > 40) {
+        capacityClass = 'medium';
+    }
+
+    card.innerHTML = `
+        <div class="shelter-name">${index + 1}. ${shelter.name}</div>
+        <div class="shelter-info">
+            <span>📍 ${shelter.address}</span>
+            <span>👥 混雑度: ${shelter.capacity}%</span>
+        </div>
+        <div class="capacity-bar">
+            <div class="capacity-fill ${capacityClass}" style="width: ${shelter.capacity}%"></div>
+        </div>
+    `;
+    
+    return card;
+}
+
+/**
+ * 地図上にルートを表示
  * @param {Object} shelter - 避難所データ
  */
-function openGoogleMaps(shelter) {
-    const destination = encodeURIComponent(shelter.name + ' 東京都新宿区');
+function showRouteOnMap(shelter) {
+    const mapContainer = document.getElementById('map-container');
+    const mapDiv = document.getElementById('map');
+    const routeDetails = document.getElementById('route-details');
+    
+    // マップコンテナを表示
+    mapContainer.style.display = 'block';
+    
+    // 地図を初期化
+    if (!map) {
+        map = new google.maps.Map(mapDiv, {
+            zoom: 14,
+            center: currentPosition
+        });
+        directionsRenderer.setMap(map);
+    }
+    
+    // ルートを表示
+    directionsRenderer.setDirections(shelter.routeData);
+    
+    // ルート詳細を表示
+    const t = translations[currentLang];
+    routeDetails.innerHTML = `
+        <div class="route-info">
+            <span class="route-label">${t.distance}:</span>
+            <span class="route-value">${shelter.distance}</span>
+        </div>
+        <div class="route-info">
+            <span class="route-label">${t.duration}:</span>
+            <span class="route-value">${shelter.duration}</span>
+        </div>
+        <button class="start-navigation-btn" onclick="startNavigation('${shelter.address}')">
+            🧭 ${t.startNavigation}
+        </button>
+    `;
+    
+    // 地図までスクロール
+    mapContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/**
+ * Google Mapsアプリでナビゲーションを開始
+ * @param {string} address - 目的地の住所
+ */
+function startNavigation(address) {
+    const destination = encodeURIComponent(address);
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
+    window.open(url, '_blank');
+}
+
+/**
+ * Web版Google Mapsで開く（フォールバック）
+ * @param {Object} shelter - 避難所データ
+ */
+function openGoogleMapsWeb(shelter) {
+    const destination = encodeURIComponent(shelter.address);
     const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=walking`;
     window.open(url, '_blank');
 }
@@ -186,10 +366,7 @@ function openGoogleMaps(shelter) {
  * 初期化処理
  */
 function init() {
-    // 位置情報の初期表示をシミュレート
-    setTimeout(() => {
-        document.getElementById('location-value').textContent = '東京都新宿区西新宿';
-    }, 500);
+    console.log('アプリケーション初期化');
 }
 
 // ページ読み込み時に初期化
