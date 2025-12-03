@@ -259,88 +259,59 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-.features {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.feature {
-    text-align: center;
-    padding: 12px;
-    background: #f8f9fa;
+/* 災害情報表示 */
+.disaster-info {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
     border-radius: 12px;
-}
-
-.feature-icon {
-    font-size: 24px;
-    margin-bottom: 8px;
-}
-
-.feature-text {
-    font-size: 11px;
-    color: #666;
-    line-height: 1.4;
-}
-
-/* Google Maps用スタイル */
-.map-container {
-    margin-top: 24px;
+    padding: 16px;
+    margin-bottom: 24px;
     animation: fadeIn 0.5s;
 }
 
-#map {
-    border: 2px solid #e0e0e0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.disaster-title {
+    font-weight: bold;
+    font-size: 16px;
+    color: #e65100;
+    margin-bottom: 8px;
 }
 
-.route-details {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 16px;
-    margin-top: 16px;
-}
-
-.route-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.route-info:last-child {
-    margin-bottom: 0;
-}
-
-.route-label {
+.disaster-location {
     font-size: 14px;
     color: #666;
+    margin-bottom: 4px;
 }
 
-.route-value {
-    font-size: 16px;
+.disaster-distance {
+    font-size: 13px;
+    color: #ff5722;
     font-weight: bold;
-    color: #333;
 }
 
-.start-navigation-btn {
+/* ルート表示ボタン */
+.show-route-btn {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
     color: white;
     border: none;
     border-radius: 12px;
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 12px;
+    margin-top: 8px;
     transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.start-navigation-btn:hover {
+.show-route-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
+}
+
+.show-route-btn:active {
+    transform: translateY(0);
 }
