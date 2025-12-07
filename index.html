@@ -6,7 +6,7 @@
     <title>Lifeline - 災害時避難誘導</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Maps JavaScript API -->
-    <script src="https://maps.googleapis.com/maps/api/js?AIzaSyBH7TLzJ--bMaWB0pXRhPWJjC4QkRaWWkQ&libraries=routes,places&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7TLzJ--bMaWB0pXRhPWJjC4QkRaWWkQ&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
     <div class="container">
@@ -22,16 +22,11 @@
                 <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
             </div>
 
-            <div class="status-card alert">
-                <div class="status-title" id="status-title">⚠️ 警戒レベル3</div>
-                <div class="status-info" id="status-info">地震発生の可能性があります。避難準備を推奨します。</div>
-            </div>
-
             <div class="location-info">
                 <div class="location-icon">📍</div>
                 <div class="location-text">
                     <div class="location-label" id="location-label">現在地</div>
-                    <div class="location-value" id="location-value">東京都新宿区西新宿</div>
+                    <div class="location-value" id="location-value">位置情報を取得中...</div>
                 </div>
             </div>
 
@@ -46,13 +41,6 @@
                     <div id="loading-text">最適な避難所を検索中...</div>
                 </div>
                 <div id="shelters"></div>
-            </div>
-
-            <!-- 災害情報表示 -->
-            <div class="disaster-info" id="disaster-info" style="display: none;">
-                <div class="disaster-title">🔥 災害発生地点</div>
-                <div class="disaster-location" id="disaster-location">情報取得中...</div>
-                <div class="disaster-distance" id="disaster-distance"></div>
             </div>
         </div>
     </div>

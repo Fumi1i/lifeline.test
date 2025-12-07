@@ -1,53 +1,38 @@
 // Google Maps関連の変数
-let map;
 let directionsService;
-let directionsRenderer;
 let currentPosition = null;
-let disasterLocation = null; // 災害発生地点
 
 // 多言語対応の翻訳データ
 const translations = {
     ja: {
         tagline: 'あなたの命を守る避難誘導サービス',
-        statusTitle: '⚠️ 警戒レベル3',
-        statusInfo: '地震発生の可能性があります。避難準備を推奨します。',
         locationLabel: '現在地',
         btnText: '避難開始',
         loadingText: '最適な避難所を検索中...',
-        disasterTitle: '🔥 災害発生地点',
-        disasterInfo: '情報取得中...',
         showRoute: '🗺️ ルートを表示',
         distance: '距離',
         duration: '所要時間',
-        fromDisaster: '災害地点から'
+        locationLoading: '位置情報を取得中...'
     },
     en: {
         tagline: 'Emergency Evacuation Guidance Service',
-        statusTitle: '⚠️ Alert Level 3',
-        statusInfo: 'Earthquake possible. Evacuation preparation recommended.',
         locationLabel: 'Current Location',
         btnText: 'Start Evacuation',
         loadingText: 'Finding optimal shelters...',
-        disasterTitle: '🔥 Disaster Location',
-        disasterInfo: 'Loading...',
         showRoute: '🗺️ Show Route',
         distance: 'Distance',
         duration: 'Duration',
-        fromDisaster: 'From disaster site'
+        locationLoading: 'Getting location...'
     },
     zh: {
         tagline: '守护您生命的避难引导服务',
-        statusTitle: '⚠️ 警戒级别3',
-        statusInfo: '可能发生地震。建议准备避难。',
         locationLabel: '当前位置',
         btnText: '开始避难',
         loadingText: '正在搜索最佳避难所...',
-        disasterTitle: '🔥 灾害发生地点',
-        disasterInfo: '获取中...',
         showRoute: '🗺️ 显示路线',
         distance: '距离',
         duration: '所需时间',
-        fromDisaster: '距离灾害点'
+        locationLoading: '正在获取位置...'
     }
 };
 
@@ -60,11 +45,51 @@ let currentLang = 'ja';
 function initMap() {
     console.log('Google Maps API loaded');
     directionsService = new google.maps.DirectionsService();
-    directionsRenderer = new google.maps.DirectionsRenderer({
-        suppressMarkers: false,
-        polylineOptions: {
-            strokeColor: '#4285F4',
-            strokeWeight: 6
+    
+    // 初期位置情報を取得
+    getCurrentLocation();
+}
+
+/**
+ * 現在位置を取得
+ */
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                currentPosition = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                console.log('現在位置取得成功:', currentPosition);
+                getAddressFromCoords(currentPosition);
+            },
+            (error) => {
+                console.log('位置情報取得失敗:', error);
+                // デフォルト位置（新宿駅周辺）
+                currentPosition = { lat: 35.6896, lng: 139.7006 };
+                document.getElementById('location-value').textContent = '東京都新宿区西新宿';
+            }
+        );
+    } else {
+        console.log('位置情報APIが利用できません');
+        currentPosition = { lat: 35.6896, lng: 139.7006 };
+        document.getElementById('location-value').textContent = '東京都新宿区西新宿';
+    }
+}
+
+/**
+ * 座標から住所を取得
+ */
+function getAddressFromCoords(coords) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: coords }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+            document.getElementById('location-value').textContent = 
+                results[0].formatted_address;
+        } else {
+            document.getElementById('location-value').textContent = 
+                `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
         }
     });
 }
@@ -81,8 +106,6 @@ function setLanguage(lang) {
 
     const t = translations[lang];
     document.getElementById('tagline').textContent = t.tagline;
-    document.getElementById('status-title').textContent = t.statusTitle;
-    document.getElementById('status-info').textContent = t.statusInfo;
     document.getElementById('location-label').textContent = t.locationLabel;
     document.getElementById('btn-text').textContent = t.btnText;
     document.getElementById('loading-text').textContent = t.loadingText;
@@ -95,13 +118,12 @@ function startEvacuation() {
     const shelterList = document.getElementById('shelter-list');
     const loading = document.getElementById('loading');
     const sheltersDiv = document.getElementById('shelters');
-    const disasterInfo = document.getElementById('disaster-info');
     
     shelterList.classList.add('active');
     loading.style.display = 'block';
     sheltersDiv.innerHTML = '';
 
-    // 現在位置を取得
+    // 位置情報を再取得
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -109,84 +131,25 @@ function startEvacuation() {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
-                console.log('現在位置取得成功:', currentPosition);
+                console.log('避難開始：現在位置', currentPosition);
                 
-                // 住所を取得
-                getAddressFromCoords(currentPosition, 'location-value');
-                
-                // 災害地点を設定（デモ：現在地から500m離れた地点）
-                // 実際のアプリでは災害情報APIから取得
-                disasterLocation = {
-                    lat: currentPosition.lat + 0.005,
-                    lng: currentPosition.lng + 0.005
-                };
-                
-                // 災害地点の情報を表示
-                disasterInfo.style.display = 'block';
-                getAddressFromCoords(disasterLocation, 'disaster-location');
-                calculateDistanceToDisaster();
-                
-                // 避難所データを取得
-                setTimeout(() => showShelters(), 2000);
+                // 避難所データを表示
+                setTimeout(() => showShelters(), 1500);
             },
             (error) => {
-                console.log('位置情報取得失敗、デモデータを使用:', error);
-                // デフォルト位置（新宿駅周辺）
-                currentPosition = { lat: 35.6896, lng: 139.7006 };
-                disasterLocation = { lat: 35.6946, lng: 139.7056 };
-                
-                disasterInfo.style.display = 'block';
-                document.getElementById('disaster-location').textContent = '東京都新宿区新宿3丁目';
-                document.getElementById('disaster-distance').textContent = '災害地点まで約600m';
-                
-                setTimeout(() => showShelters(), 2000);
+                console.log('位置情報取得失敗、デフォルト位置を使用:', error);
+                if (!currentPosition) {
+                    currentPosition = { lat: 35.6896, lng: 139.7006 };
+                }
+                setTimeout(() => showShelters(), 1500);
             }
         );
     } else {
-        console.log('位置情報APIが利用できません');
-        currentPosition = { lat: 35.6896, lng: 139.7006 };
-        disasterLocation = { lat: 35.6946, lng: 139.7056 };
-        
-        disasterInfo.style.display = 'block';
-        document.getElementById('disaster-location').textContent = '東京都新宿区新宿3丁目';
-        document.getElementById('disaster-distance').textContent = '災害地点まで約600m';
-        
-        setTimeout(() => showShelters(), 2000);
+        if (!currentPosition) {
+            currentPosition = { lat: 35.6896, lng: 139.7006 };
+        }
+        setTimeout(() => showShelters(), 1500);
     }
-}
-
-/**
- * 座標から住所を取得
- */
-function getAddressFromCoords(coords, elementId) {
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: coords }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-            document.getElementById(elementId).textContent = results[0].formatted_address;
-        }
-    });
-}
-
-/**
- * 災害地点までの距離を計算
- */
-function calculateDistanceToDisaster() {
-    if (!currentPosition || !disasterLocation) return;
-    
-    const service = new google.maps.DistanceMatrixService();
-    service.getDistanceMatrix({
-        origins: [currentPosition],
-        destinations: [disasterLocation],
-        travelMode: google.maps.TravelMode.WALKING,
-        unitSystem: google.maps.UnitSystem.METRIC
-    }, (response, status) => {
-        if (status === 'OK') {
-            const distance = response.rows[0].elements[0].distance.text;
-            const t = translations[currentLang];
-            document.getElementById('disaster-distance').textContent = 
-                `${t.fromDisaster}: ${distance}`;
-        }
-    });
 }
 
 /**
@@ -199,6 +162,7 @@ function showShelters() {
     loading.style.display = 'none';
 
     // デモ用避難所データ
+    // 実際のアプリでは、バックエンドAPIや避難所データベースから取得
     const shelters = [
         { 
             name: '新宿区立 西新宿小学校',
@@ -236,7 +200,7 @@ function showShelters() {
  * ルート計算して避難所カードを作成
  */
 function calculateAndDisplayRoute(shelter, index, container) {
-    if (!currentPosition) {
+    if (!currentPosition || !directionsService) {
         const card = createShelterCardWithoutRoute(shelter, index);
         container.appendChild(card);
         return;
@@ -333,7 +297,7 @@ function createShelterCardWithoutRoute(shelter, index) {
 function openGoogleMapsRoute(shelter) {
     let origin = '';
     
-    // 現在位置があればそれを使用、なければ住所
+    // 現在位置があればそれを使用
     if (currentPosition) {
         origin = `${currentPosition.lat},${currentPosition.lng}`;
     } else {
@@ -342,7 +306,7 @@ function openGoogleMapsRoute(shelter) {
     
     const destination = encodeURIComponent(shelter.address);
     
-    // Google Maps URLを生成
+    // Google Maps URLを生成（徒歩ルート）
     const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
     
     // 新しいタブで開く
@@ -354,11 +318,8 @@ function openGoogleMapsRoute(shelter) {
  */
 function init() {
     console.log('Lifeline アプリケーション起動');
-    
-    // デモ用の初期位置表示
-    setTimeout(() => {
-        document.getElementById('location-value').textContent = '位置情報を取得中...';
-    }, 100);
+    const t = translations[currentLang];
+    document.getElementById('location-value').textContent = t.locationLoading;
 }
 
 // ページ読み込み時に初期化

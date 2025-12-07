@@ -1,6 +1,3 @@
-@charset "utf-8";
-
-
 * {
     margin: 0;
     padding: 0;
@@ -72,32 +69,6 @@ body {
     border-color: transparent;
 }
 
-.status-card {
-    background: #f8f9fa;
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 24px;
-    border-left: 4px solid #4caf50;
-}
-
-.status-card.alert {
-    border-left-color: #ff5252;
-    background: #ffebee;
-}
-
-.status-title {
-    font-weight: bold;
-    margin-bottom: 8px;
-    font-size: 16px;
-    color: #333;
-}
-
-.status-info {
-    font-size: 14px;
-    color: #666;
-    line-height: 1.6;
-}
-
 .location-info {
     display: flex;
     align-items: center;
@@ -157,6 +128,18 @@ body {
     font-size: 24px;
 }
 
+/* エラーメッセージ */
+.error-message {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    color: #c62828;
+    font-size: 14px;
+    animation: fadeIn 0.3s;
+}
+
 .shelter-list {
     display: none;
     margin-top: 24px;
@@ -184,7 +167,6 @@ body {
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 12px;
-    cursor: pointer;
     transition: all 0.3s;
 }
 
@@ -221,6 +203,7 @@ body {
     border-radius: 3px;
     overflow: hidden;
     margin-top: 8px;
+    margin-bottom: 12px;
 }
 
 .capacity-fill {
@@ -259,35 +242,6 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* 災害情報表示 */
-.disaster-info {
-    background: #fff3e0;
-    border-left: 4px solid #ff9800;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 24px;
-    animation: fadeIn 0.5s;
-}
-
-.disaster-title {
-    font-weight: bold;
-    font-size: 16px;
-    color: #e65100;
-    margin-bottom: 8px;
-}
-
-.disaster-location {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 4px;
-}
-
-.disaster-distance {
-    font-size: 13px;
-    color: #ff5722;
-    font-weight: bold;
-}
-
 /* ルート表示ボタン */
 .show-route-btn {
     width: 100%;
@@ -299,7 +253,6 @@ body {
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 8px;
     transition: all 0.3s;
     display: flex;
     align-items: center;
