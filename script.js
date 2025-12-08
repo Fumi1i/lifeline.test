@@ -3,7 +3,7 @@
 // ==========================================
 const COGNITO_DOMAIN = "https://us-west-2y4blf7hds.auth.us-west-2.amazoncognito.com";
 const CLIENT_ID = "6r14oe2o88f4c7ib0eb33kr16r";
-const REDIRECT_URI = "https://d3clw2e825frde.cloudfront.net";
+const REDIRECT_URI = "https://d12345abcdef.cloudfront.net";
 // 最後に /guidance を付けたURL
 const API_URL = "https://z991hwe97l.execute-api.us-west-2.amazonaws.com/dev/guidance";
 // ==========================================
@@ -221,43 +221,6 @@ async function startEvacuation() {
     }
 }
 
-/**
- * 避難所リストを表示 (デモデータ)
- */
-function showDemoShelters() {
-    const sheltersDiv = document.getElementById('shelters');
-    
-    // バックエンドがまだ座標リストを返さないため、
-    // UI確認用にデザイナーが作成したデモデータを使用します
-    const shelters = [
-        { 
-            name: '新宿区立 西新宿小学校',
-            address: '東京都新宿区西新宿4-35-4',
-            lat: 35.6869,
-            lng: 139.6917,
-            capacity: 35
-        },
-        { 
-            name: '新宿スポーツセンター',
-            address: '東京都新宿区大久保3-5-1',
-            lat: 35.7018,
-            lng: 139.7007,
-            capacity: 68
-        },
-        { 
-            name: '新宿区役所 本庁舎',
-            address: '東京都新宿区歌舞伎町1-4-1',
-            lat: 35.6938,
-            lng: 139.7036,
-            capacity: 52 
-        }
-    ];
-
-    // 各避難所のルート情報を計算
-    shelters.forEach((shelter, index) => {
-        calculateAndDisplayRoute(shelter, index, sheltersDiv);
-    });
-}
 
 /**
  * ルート計算して避難所カードを作成
