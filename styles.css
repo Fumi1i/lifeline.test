@@ -128,18 +128,6 @@ body {
     font-size: 24px;
 }
 
-/* エラーメッセージ */
-.error-message {
-    background: #ffebee;
-    border-left: 4px solid #f44336;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-    color: #c62828;
-    font-size: 14px;
-    animation: fadeIn 0.3s;
-}
-
 .shelter-list {
     display: none;
     margin-top: 24px;

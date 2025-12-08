@@ -5,45 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lifeline - 災害時避難誘導</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Google Maps JavaScript API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBH7TLzJ--bMaWB0pXRhPWJjC4QkRaWWkQ&libraries=places&callback=initMap" async defer></script>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="logo">🛡️ Lifeline</div>
-            <div class="tagline" id="tagline">あなたの命を守る避難誘導サービス</div>
-        </div>
-
-        <div class="content">
-            <div class="language-selector">
-                <button class="lang-btn active" onclick="setLanguage('ja')">日本語</button>
-                <button class="lang-btn" onclick="setLanguage('en')">English</button>
-                <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+        <div id="login-view">
+            <div class="header">
+                <div class="logo">🛡️ Lifeline</div>
+                <div class="tagline">ログインが必要です</div>
             </div>
-
-            <div class="location-info">
-                <div class="location-icon">📍</div>
-                <div class="location-text">
-                    <div class="location-label" id="location-label">現在地</div>
-                    <div class="location-value" id="location-value">位置情報を取得中...</div>
-                </div>
-            </div>
-
-            <button class="evacuation-btn" onclick="startEvacuation()">
-                <span class="btn-icon">🚨</span>
-                <span id="btn-text">避難開始</span>
-            </button>
-
-            <div class="shelter-list" id="shelter-list">
-                <div class="loading" id="loading">
-                    <div class="spinner"></div>
-                    <div id="loading-text">最適な避難所を検索中...</div>
-                </div>
-                <div id="shelters"></div>
+            <div class="content" style="text-align: center; padding: 40px 20px;">
+                <p style="margin-bottom: 20px; color: #666;">命を守るための避難誘導サービスです。<br>利用するにはログインしてください。</p>
+                <button class="evacuation-btn" onclick="redirectToLogin()">
+                    <span class="btn-icon">🔑</span>
+                    <span>ログイン / 登録</span>
+                </button>
             </div>
         </div>
-    </div>
+        <div id="app-view" style="display: none;">
+            <div class="header">
+                <div class="logo">🛡️ Lifeline</div>
+                <div class="tagline" id="tagline">あなたの命を守る避難誘導サービス</div>
+            </div>
+
+            <div class="content">
+                <div class="language-selector">
+                    <button class="lang-btn active" onclick="setLanguage('ja')">日本語</button>
+                    <button class="lang-btn" onclick="setLanguage('en')">English</button>
+                    <button class="lang-btn" onclick="setLanguage('zh')">中文</button>
+                </div>
+
+                <div class="location-info">
+                    <div class="location-icon">📍</div>
+                    <div class="location-text">
+                        <div class="location-label" id="location-label">現在地</div>
+                        <div class="location-value" id="location-value">位置情報を取得中...</div>
+                    </div>
+                </div>
+
+                <div id="ai-response-area" style="display:none; background: #f0f4ff; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #667eea;">
+                    <strong style="color: #667eea;">🤖 AIからの案内:</strong>
+                    <p id="ai-answer-text" style="font-size: 14px; margin-top: 5px; color: #333;"></p>
+                </div>
+
+                <button class="evacuation-btn" onclick="startEvacuation()">
+                    <span class="btn-icon">🚨</span>
+                    <span id="btn-text">避難開始</span>
+                </button>
+
+                <div class="shelter-list" id="shelter-list">
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <div id="loading-text">最適な避難所を検索中...</div>
+                    </div>
+                    <div id="shelters"></div>
+                </div>
+            </div>
+        </div>
+        </div>
 
     <script src="script.js"></script>
 </body>
