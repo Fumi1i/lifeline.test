@@ -256,3 +256,29 @@ body {
 .show-route-btn:active {
     transform: translateY(0);
 }
+
+
+
+
+/* AI推奨バッジ */
+.recommended-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.shelter-card.recommended {
+    border: 2px solid #FFD700;
+    background: linear-gradient(135deg, #FFFEF7 0%, #FFF9E6 100%);
+}
+
+.shelter-card.recommended:hover {
+    border-color: #FFA500;
+    box-shadow: 0 6px 16px rgba(255, 165, 0, 0.3);
+}

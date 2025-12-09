@@ -3,13 +3,14 @@
 // ==========================================
 const COGNITO_DOMAIN = "https://us-west-2y4blf7hds.auth.us-west-2.amazoncognito.com";
 const CLIENT_ID = "6r14oe2o88f4c7ib0eb33kr16r";
-const REDIRECT_URI = "https://d12345abcdef.cloudfront.net";
+const REDIRECT_URI = "https://d3clw2e825frde.cloudfront.net";
 // 最後に /guidance を付けたURL
 const API_URL = "https://z991hwe97l.execute-api.us-west-2.amazonaws.com/dev/guidance";
 // ==========================================
 
 let directionsService;
 let currentPosition = null;
+let currentAddress = ""; // ★追加: 住所を保持する変数
 let idToken = null; // ログイン用トークン
 
 // 多言語対応の翻訳データ
@@ -21,7 +22,8 @@ const translations = {
         loadingText: '最適な避難所を検索中...',
         showRoute: '🗺️ ルートを表示',
         locationLoading: '位置情報を取得中...',
-        aiError: 'AI通信エラー'
+        aiError: 'AI通信エラー',
+        recommendedShelter: 'おすすめの避難所'
     },
     en: {
         tagline: 'Emergency Evacuation Guidance Service',
@@ -30,7 +32,8 @@ const translations = {
         loadingText: 'Finding optimal shelters...',
         showRoute: '🗺️ Show Route',
         locationLoading: 'Getting location...',
-        aiError: 'AI Connection Error'
+        aiError: 'AI Connection Error',
+        recommendedShelter: 'Recommended Shelter'
     },
     zh: {
         tagline: '守护您生命的避难引导服务',
@@ -39,7 +42,8 @@ const translations = {
         loadingText: '正在搜索最佳避难所...',
         showRoute: '🗺️ 显示路线',
         locationLoading: '正在获取位置...',
-        aiError: 'AI连接错误'
+        aiError: 'AI连接错误',
+        recommendedShelter: '推荐避难所'
     }
 };
 
@@ -117,12 +121,14 @@ function getCurrentLocation() {
                 console.log('位置情報取得失敗:', error);
                 // デフォルト位置（新宿駅周辺）
                 currentPosition = { lat: 35.6896, lng: 139.7006 };
+                currentAddress = "東京都新宿区西新宿"; // デフォルト住所
                 document.getElementById('location-value').textContent = '東京都新宿区西新宿 (現在地取得失敗)';
             }
         );
     } else {
         console.log('位置情報APIが利用できません');
         currentPosition = { lat: 35.6896, lng: 139.7006 };
+        currentAddress = "東京都新宿区西新宿"; // デフォルト住所
         document.getElementById('location-value').textContent = '位置情報API無効';
     }
 }
@@ -134,11 +140,13 @@ function getAddressFromCoords(coords) {
     const geocoder = new google.maps.Geocoder();
     geocoder.geocode({ location: coords }, (results, status) => {
         if (status === 'OK' && results[0]) {
-            document.getElementById('location-value').textContent = 
-                results[0].formatted_address;
+            // ★変更: 住所を変数に保存
+            currentAddress = results[0].formatted_address;
+            document.getElementById('location-value').textContent = currentAddress;
         } else {
-            document.getElementById('location-value').textContent = 
-                `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+            // 取得失敗時は座標を文字列として保持
+            currentAddress = `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+            document.getElementById('location-value').textContent = currentAddress;
         }
     });
 }
@@ -173,6 +181,7 @@ async function startEvacuation() {
     // 位置情報がない場合はデフォルトを使用
     if (!currentPosition) {
         currentPosition = { lat: 35.6896, lng: 139.7006 };
+        if (!currentAddress) currentAddress = "東京都新宿区西新宿";
     }
 
     try {
@@ -185,9 +194,9 @@ async function startEvacuation() {
                 'Content-Type': 'application/json',
                 'Authorization': idToken // Cognitoトークン
             },
+            // ★変更: 緯度経度ではなく住所を送信
             body: JSON.stringify({
-                latitude: currentPosition.lat,
-                longitude: currentPosition.lng
+                address: currentAddress
             })
         });
 
@@ -198,35 +207,77 @@ async function startEvacuation() {
         const data = await response.json();
         console.log("API Response:", data);
 
-        // AIの回答を表示
         loading.style.display = 'none';
-        
-        if (data.answer) {
-            aiArea.style.display = 'block';
-            aiText.innerText = data.answer;
-        }
 
-        // ▼注意: 本来はAIの回答から座標を解析しますが、
-        // 今のBackendはテキストしか返さないため、
-        // 画面上は「デモ用の避難所データ」を表示して、地図機能を維持します。
-        showDemoShelters();
+        // バックエンドから避難先の名称を取得
+        if (data.facility_name) {
+            const facilityName = data.facility_name;
+            console.log("Recommended facility:", facilityName);
+            
+            // AIのおすすめ避難所を表示
+            aiArea.style.display = 'block';
+            const t = translations[currentLang];
+            aiText.innerHTML = `<strong>${t.recommendedShelter}:</strong> ${facilityName}`;
+            
+            // 避難所カードを作成して表示
+            displayRecommendedShelter(facilityName);
+        } else {
+            throw new Error('施設名が取得できませんでした');
+        }
 
     } catch (error) {
         console.error(error);
         loading.style.display = 'none';
         aiArea.style.display = 'block';
-        aiText.innerText = `エラーが発生しました: ${error.message}`;
-        // エラーでもデモデータは表示しておく
-        showDemoShelters();
+        const t = translations[currentLang];
+        aiText.innerText = `${t.aiError}: ${error.message}`;
     }
 }
 
+/**
+ * バックエンドから取得した避難所を表示
+ */
+function displayRecommendedShelter(facilityName) {
+    const sheltersDiv = document.getElementById('shelters');
+    
+    // Google Places APIで施設の詳細情報を取得
+    const service = new google.maps.places.PlacesService(document.createElement('div'));
+    
+    const request = {
+        query: facilityName,
+        fields: ['name', 'formatted_address', 'geometry'],
+    };
+
+    service.findPlaceFromQuery(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results && results[0]) {
+            const place = results[0];
+            const shelter = {
+                name: place.name,
+                address: place.formatted_address,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
+            
+            // ルート情報を計算して表示
+            calculateAndDisplayRoute(shelter, 0, sheltersDiv);
+        } else {
+            // Places APIで見つからない場合は、名前だけで表示
+            console.warn('Places APIで施設が見つかりませんでした。名前のみで表示します。');
+            const shelter = {
+                name: facilityName,
+                address: '住所情報を取得できませんでした'
+            };
+            const card = createShelterCardWithoutRoute(shelter, 0);
+            sheltersDiv.appendChild(card);
+        }
+    });
+}
 
 /**
  * ルート計算して避難所カードを作成
  */
 function calculateAndDisplayRoute(shelter, index, container) {
-    if (!currentPosition || !directionsService) {
+    if (!currentPosition || !directionsService || !shelter.lat || !shelter.lng) {
         const card = createShelterCardWithoutRoute(shelter, index);
         container.appendChild(card);
         return;
@@ -257,23 +308,19 @@ function calculateAndDisplayRoute(shelter, index, container) {
 
 function createShelterCard(shelter, index) {
     const card = document.createElement('div');
-    card.className = 'shelter-card';
+    card.className = 'shelter-card recommended';
     
-    let capacityClass = '';
-    if (shelter.capacity > 70) capacityClass = 'high';
-    else if (shelter.capacity > 40) capacityClass = 'medium';
-
     const t = translations[currentLang];
 
     card.innerHTML = `
-        <div class="shelter-name">${index + 1}. ${shelter.name}</div>
+        <div class="recommended-badge">✨ AI推奨</div>
+        <div class="shelter-name">${shelter.name}</div>
+        <div class="shelter-info">
+            <span>📍 ${shelter.address}</span>
+        </div>
         <div class="shelter-info">
             <span>📏 ${shelter.distance}</span>
             <span>⏱️ ${shelter.duration}</span>
-            <span>👥 混雑度: ${shelter.capacity}%</span>
-        </div>
-        <div class="capacity-bar">
-            <div class="capacity-fill ${capacityClass}" style="width: ${shelter.capacity}%"></div>
         </div>
         <button class="show-route-btn" onclick='openGoogleMapsRoute(${JSON.stringify(shelter)})'>
             ${t.showRoute}
@@ -284,16 +331,16 @@ function createShelterCard(shelter, index) {
 
 function createShelterCardWithoutRoute(shelter, index) {
     const card = document.createElement('div');
-    card.className = 'shelter-card';
+    card.className = 'shelter-card recommended';
     const t = translations[currentLang];
 
     card.innerHTML = `
-        <div class="shelter-name">${index + 1}. ${shelter.name}</div>
+        <div class="recommended-badge">✨ AI推奨</div>
+        <div class="shelter-name">${shelter.name}</div>
         <div class="shelter-info">
-            <span>📍 ${shelter.address}</span>
-            <span>👥 混雑度: ${shelter.capacity}%</span>
+            <span>📍 ${shelter.address || '住所不明'}</span>
         </div>
-        <button class="show-route-btn" onclick='openGoogleMapsRoute(${JSON.stringify(shelter)})'>
+        <button class="show-route-btn" onclick='openGoogleMapsDirectSearch("${shelter.name}")'>
             ${t.showRoute}
         </button>
     `;
@@ -307,7 +354,21 @@ function openGoogleMapsRoute(shelter) {
     } else {
         origin = encodeURIComponent(document.getElementById('location-value').textContent);
     }
-    const destination = encodeURIComponent(shelter.address);
+    
+    // 住所がある場合は住所を使用、ない場合は施設名で検索
+    let destination;
+    if (shelter.address && shelter.address !== '住所情報を取得できませんでした') {
+        destination = encodeURIComponent(shelter.address);
+    } else {
+        destination = encodeURIComponent(shelter.name);
+    }
+    
     const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
+    window.open(url, '_blank');
+}
+
+function openGoogleMapsDirectSearch(facilityName) {
+    // 施設名で直接Google Maps検索
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(facilityName)}`;
     window.open(url, '_blank');
 }
